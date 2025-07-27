@@ -39,15 +39,19 @@ class StockDataService:
         self.db_manager.write_points(points)
 
     def query_data_by_time_range(self, query: TimeRangeQuery) -> StockDataResponse:
-        """Query stock data within a specified time range."""
-        # Build Flux query
-        flux_query = self._build_flux_query(query)
+        """Query stock data by time range."""
+        # Get price data
+        price_query = self._build_flux_query(query)
+        price_result = self.db_manager.query(price_query)
+        price_data = self._process_price_results(price_result)
 
-        # Execute query
-        result = self.db_manager.query(flux_query)
+        # Get volume data
+        volume_query = self._build_volume_query(query)
+        volume_result = self.db_manager.query(volume_query)
+        volume_data = self._process_volume_results(volume_result)
 
-        # Process results
-        data_points = self._process_query_results(result)
+        # Combine price and volume data
+        data_points = self._combine_price_and_volume(price_data, volume_data)
 
         # Determine time range
         time_range = self._determine_time_range(query)
@@ -107,20 +111,99 @@ class StockDataService:
             |> sort(columns: ["_time"])
         '''
 
+    def _build_volume_query(self, query: TimeRangeQuery) -> str:
+        """Build Flux query string for volume data."""
+        start_time = query.start_time or datetime.utcnow() - timedelta(days=7)
+        end_time = query.end_time or datetime.utcnow()
+
+        # Format datetime for Flux query (RFC3339 format)
+        start_str = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        end_str = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        return f'''
+        from(bucket: "stock_data")
+            |> range(start: {start_str}, stop: {end_str})
+            |> filter(fn: (r) => r["_measurement"] == "stock_data")
+            |> filter(fn: (r) => r["symbol"] == "{query.symbol}")
+            |> filter(fn: (r) => r["_field"] == "volume")
+            |> aggregateWindow(every: {query.interval}, fn: sum, createEmpty: false)
+            |> sort(columns: ["_time"])
+        '''
+
     def _process_query_results(self, result: List[Any]) -> List[Dict[str, Any]]:
         """Process InfluxDB query results into a standardized format."""
         data_points = []
 
         for table in result:
             for record in table.records:
+                # With pivot, we get both price and volume in the same record
                 data_point = {
                     "timestamp": record.get_time().isoformat(),
-                    "price": record.get_value(),
-                    "volume": 0  # Volume will be 0 for aggregated price data
+                    "price": record.values.get("price", 0),
+                    "volume": record.values.get("volume", 0)
                 }
                 data_points.append(data_point)
 
         return data_points
+
+    def _process_price_results(self, result: List[Any]) -> List[Dict[str, Any]]:
+        """Process InfluxDB query results for price data."""
+        price_data = []
+        for table in result:
+            for record in table.records:
+                price_data.append({
+                    "timestamp": record.get_time().isoformat(),
+                    "price": record.get_value()
+                })
+        return price_data
+
+    def _process_volume_results(self, result: List[Any]) -> List[Dict[str, Any]]:
+        """Process InfluxDB query results for volume data."""
+        volume_data = []
+        for table in result:
+            for record in table.records:
+                volume_data.append({
+                    "timestamp": record.get_time().isoformat(),
+                    "volume": record.get_value()
+                })
+        return volume_data
+
+    def _combine_price_and_volume(self, price_data: List[Dict[str, Any]], volume_data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Combine price and volume data points based on timestamp."""
+        combined_data = []
+        price_index = 0
+        volume_index = 0
+
+        while price_index < len(price_data) and volume_index < len(volume_data):
+            price_point = price_data[price_index]
+            volume_point = volume_data[volume_index]
+
+            if price_point["timestamp"] == volume_point["timestamp"]:
+                combined_data.append({
+                    "timestamp": price_point["timestamp"],
+                    "price": price_point["price"],
+                    "volume": volume_point["volume"]
+                })
+                price_index += 1
+                volume_index += 1
+            elif price_point["timestamp"] < volume_point["timestamp"]:
+                combined_data.append(price_point)
+                price_index += 1
+            else:
+                combined_data.append(volume_point)
+                volume_index += 1
+
+        # Add remaining price points
+        while price_index < len(price_data):
+            combined_data.append(price_data[price_index])
+            price_index += 1
+
+        # Add remaining volume points
+        while volume_index < len(volume_data):
+            combined_data.append(volume_data[volume_index])
+            volume_index += 1
+
+        return combined_data
 
     def _determine_time_range(self, query: TimeRangeQuery) -> Dict[str, datetime]:
         """Determine the actual time range for the query."""
