@@ -10,6 +10,7 @@ help:
 	@echo "  test     - Run all tests"
 	@echo "  clean    - Clean up containers and volumes"
 	@echo "  setup    - Setup the development environment"
+	@echo "  mock-data - Insert mock stock data for testing"
 
 # Build all Docker images
 build:
@@ -81,3 +82,8 @@ db-backup:
 
 db-restore:
 	docker-compose exec influxdb influx restore /tmp/backup
+
+# Insert mock data for testing
+mock-data:
+	@echo "Inserting mock stock data..."
+	cd backend && python scripts/insert_mock_data.py
