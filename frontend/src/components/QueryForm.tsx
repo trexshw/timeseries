@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TimeRangeQuery } from "../types/stock";
 
 interface QueryFormProps {
@@ -12,10 +12,31 @@ const QueryForm: React.FC<QueryFormProps> = ({
   onSubmit,
   selectedSymbol,
 }) => {
+  // Helper function to get default 7-day range
+  const getDefaultTimeRange = () => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+
+    return {
+      start_time: startDate.toISOString().slice(0, 16), // Format for datetime-local input
+      end_time: endDate.toISOString().slice(0, 16),
+    };
+  };
+
   const [query, setQuery] = useState<TimeRangeQuery>({
     symbol: selectedSymbol,
-    interval: "1m",
+    interval: "1h", // Changed default to 1h for better data display
+    ...getDefaultTimeRange(),
   });
+
+  // Update symbol when selectedSymbol prop changes
+  useEffect(() => {
+    setQuery((prev) => ({
+      ...prev,
+      symbol: selectedSymbol,
+    }));
+  }, [selectedSymbol]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +52,14 @@ const QueryForm: React.FC<QueryFormProps> = ({
     setQuery((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const setDefaultRange = () => {
+    const defaultRange = getDefaultTimeRange();
+    setQuery((prev) => ({
+      ...prev,
+      ...defaultRange,
     }));
   };
 
@@ -82,7 +111,7 @@ const QueryForm: React.FC<QueryFormProps> = ({
             htmlFor="start-time"
             className="block text-sm font-medium text-gray-700"
           >
-            Start Time (Optional)
+            Start Time
           </label>
           <input
             type="datetime-local"
@@ -99,7 +128,7 @@ const QueryForm: React.FC<QueryFormProps> = ({
             htmlFor="end-time"
             className="block text-sm font-medium text-gray-700"
           >
-            End Time (Optional)
+            End Time
           </label>
           <input
             type="datetime-local"
@@ -109,6 +138,16 @@ const QueryForm: React.FC<QueryFormProps> = ({
             onChange={handleInputChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
           />
+        </div>
+
+        <div className="flex space-x-2">
+          <button
+            type="button"
+            onClick={setDefaultRange}
+            className="flex-1 py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            Set Default Range (7 days)
+          </button>
         </div>
 
         <div>
@@ -144,8 +183,8 @@ const QueryForm: React.FC<QueryFormProps> = ({
 
       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
         <p className="text-sm text-blue-800">
-          <strong>Tip:</strong> Leave start and end times empty to query the
-          last 7 days of data.
+          <strong>Tip:</strong> The form is pre-filled with the last 7 days. Use
+          the "Set Default Range" button to reset to the current 7-day period.
         </p>
       </div>
     </div>
