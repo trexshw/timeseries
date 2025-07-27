@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useStockData } from "../hooks/useStockData";
 import StockChart from "./StockChart";
 import DataInputForm from "./DataInputForm";
@@ -20,9 +20,26 @@ const StockDashboard: React.FC = () => {
   );
   const { data: healthData } = useHealthCheck();
 
+  // Auto-load data when symbol is selected
+  useEffect(() => {
+    if (selectedSymbol && !queryParams) {
+      // Create a default query for the last 7 days when symbol is selected
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
+
+      setQueryParams({
+        symbol: selectedSymbol,
+        interval: "1h",
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
+      });
+    }
+  }, [selectedSymbol, queryParams]);
+
   const handleSymbolSelect = (symbol: string) => {
     setSelectedSymbol(symbol);
-    setQueryParams(null);
+    setQueryParams(null); // Reset query params to trigger auto-load
   };
 
   const handleQuerySubmit = (query: TimeRangeQuery) => {
@@ -125,7 +142,11 @@ const StockDashboard: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 {selectedSymbol
-                  ? `${selectedSymbol} Stock Chart`
+                  ? `${selectedSymbol} Stock Chart${
+                      timeRangeData?.data_points.length
+                        ? ` (${timeRangeData.data_points.length} data points)`
+                        : ""
+                    }`
                   : "Select a symbol to view data"}
               </h3>
               {isLoading && (
