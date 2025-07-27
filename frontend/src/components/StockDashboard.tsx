@@ -37,7 +37,7 @@ const StockDashboard: React.FC = () => {
         end_time: endDate.toISOString(),
       });
     }
-  }, [selectedSymbol, queryParams]);
+  }, [selectedSymbol]); // Remove queryParams from dependency array
 
   const handleSymbolSelect = (symbol: string) => {
     setSelectedSymbol(symbol);
@@ -49,7 +49,14 @@ const StockDashboard: React.FC = () => {
   };
 
   const getChartData = (): ChartDataPoint[] => {
+    console.log("getChartData called:", { timeRangeData, latestData });
+
     if (timeRangeData) {
+      console.log(
+        "Using timeRangeData:",
+        timeRangeData.data_points.length,
+        "points"
+      );
       return timeRangeData.data_points.map((point) => ({
         timestamp: point.timestamp,
         price: point.price,
@@ -58,6 +65,7 @@ const StockDashboard: React.FC = () => {
     }
 
     if (latestData) {
+      console.log("Using latestData:", latestData.data_points.length, "points");
       return latestData.data_points.map((point) => ({
         timestamp: point.timestamp,
         price: point.price,
@@ -65,6 +73,7 @@ const StockDashboard: React.FC = () => {
       }));
     }
 
+    console.log("No data available");
     return [];
   };
 
