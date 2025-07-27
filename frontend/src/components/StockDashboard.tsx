@@ -16,7 +16,9 @@ const StockDashboard: React.FC = () => {
   const { data: latestData, isLoading: latestLoading } =
     useLatestData(selectedSymbol);
   const { data: timeRangeData, isLoading: timeRangeLoading } = useTimeRangeData(
-    queryParams || { symbol: "", interval: "1m" }
+    queryParams && queryParams.symbol
+      ? queryParams
+      : { symbol: "", interval: "1h", start_time: "", end_time: "" }
   );
   const { data: healthData } = useHealthCheck();
 
