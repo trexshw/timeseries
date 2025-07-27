@@ -69,7 +69,7 @@ class StockDataService:
 
         # Build Flux query for latest data
         flux_query = f'''
-        from(bucket: "{self.db_manager.client.buckets_api().find_bucket_by_name("stock_data").id}")
+        from(bucket: "stock_data")
             |> range(start: -1h)
             |> filter(fn: (r) => r["_measurement"] == "stock_data")
             |> filter(fn: (r) => r["symbol"] == "{symbol}")
@@ -94,7 +94,7 @@ class StockDataService:
         end_time = query.end_time or datetime.utcnow()
 
         return f'''
-        from(bucket: "{self.db_manager.client.buckets_api().find_bucket_by_name("stock_data").id}")
+        from(bucket: "stock_data")
             |> range(start: {start_time.isoformat()}, stop: {end_time.isoformat()})
             |> filter(fn: (r) => r["_measurement"] == "stock_data")
             |> filter(fn: (r) => r["symbol"] == "{query.symbol}")
@@ -130,10 +130,9 @@ class StockDataService:
     def get_available_symbols(self) -> List[str]:
         """Get list of available stock symbols in the database."""
         flux_query = f'''
-        from(bucket: "{self.db_manager.client.buckets_api().find_bucket_by_name("stock_data").id}")
+        from(bucket: "stock_data")
             |> range(start: -30d)
             |> filter(fn: (r) => r["_measurement"] == "stock_data")
-            |> group(columns: ["symbol"])
             |> distinct(column: "symbol")
         '''
 

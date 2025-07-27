@@ -143,7 +143,10 @@ const DataInputForm: React.FC = () => {
       {storeDataMutation.isError && (
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
           <p className="text-sm text-red-800">
-            Error: {storeDataMutation.error?.message}
+            Error:{" "}
+            {storeDataMutation.error instanceof Error
+              ? storeDataMutation.error.message
+              : "An error occurred while adding the data point"}
           </p>
         </div>
       )}

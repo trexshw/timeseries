@@ -1,11 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import { stockApi } from "../services/api";
-import {
-  StockDataPoint,
-  StockDataBatch,
-  TimeRangeQuery,
-  StockDataResponse,
-} from "../types/stock";
+import { StockDataPoint, StockDataBatch, TimeRangeQuery } from "../types/stock";
 
 export const useStockData = () => {
   const queryClient = useQueryClient();

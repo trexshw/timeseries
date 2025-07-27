@@ -13,4 +13,4 @@ flake8==6.1.0
 mypy==1.7.1
 python-dotenv==1.0.0
 pandas==2.1.4
-numpy==1.25.2
+numpy>=1.26.0
