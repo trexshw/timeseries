@@ -93,11 +93,16 @@ class StockDataService:
         start_time = query.start_time or datetime.utcnow() - timedelta(days=7)
         end_time = query.end_time or datetime.utcnow()
 
+        # Format datetime for Flux query (RFC3339 format)
+        start_str = start_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+        end_str = end_time.strftime("%Y-%m-%dT%H:%M:%SZ")
+
         return f'''
         from(bucket: "stock_data")
-            |> range(start: {start_time.isoformat()}, stop: {end_time.isoformat()})
+            |> range(start: {start_str}, stop: {end_str})
             |> filter(fn: (r) => r["_measurement"] == "stock_data")
             |> filter(fn: (r) => r["symbol"] == "{query.symbol}")
+            |> filter(fn: (r) => r["_field"] == "price")
             |> aggregateWindow(every: {query.interval}, fn: mean, createEmpty: false)
             |> sort(columns: ["_time"])
         '''
@@ -111,7 +116,7 @@ class StockDataService:
                 data_point = {
                     "timestamp": record.get_time().isoformat(),
                     "price": record.get_value(),
-                    "volume": record.values.get("volume", 0)
+                    "volume": 0  # Volume will be 0 for aggregated price data
                 }
                 data_points.append(data_point)
 
