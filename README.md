@@ -1,5 +1,26 @@
 # Stock Trading Data Management System
 
+
+## 📸 Screenshots
+
+### Stock Trading Dashboard
+![Stock Trading Dashboard](screenshot.png)
+
+The application provides a comprehensive dashboard for stock trading data management with:
+- **Interactive Charts**: Real-time price and volume visualization
+- **Symbol Selection**: Choose from multiple stock symbols (AAPL, GOOGL, MSFT, TSLA, AMZN)
+- **Data Input Forms**: Add new stock data points
+- **Query Interface**: Custom time range and interval selection
+- **Auto-loading**: Data automatically loads when symbols are selected
+
+### Features Demonstrated:
+- ✅ Real volume data (not zeros)
+- ✅ Price line charts with volume bars
+- ✅ Responsive design with Tailwind CSS
+- ✅ Modern UI with clean styling
+- ✅ Interactive tooltips on hover
+
+
 A comprehensive system for managing and querying large volumes of stock trading data using a time-series database.
 
 ## Features
